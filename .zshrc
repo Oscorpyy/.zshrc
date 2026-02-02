@@ -188,8 +188,8 @@ openz() {
 
 # --- Norminette & Linting ---
 alias norm="norminette -R CheckForbiddenSourceHeader"
-alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\''
-alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\''
+alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
+alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
 
 # --- Compilation ---
 alias c="cc -Wall -Wextra -Werror"

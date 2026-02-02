@@ -20,8 +20,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# Demarrage auto du son (silencieux)
-systemctl --user start pulseaudio >/dev/null 2>&1
 
 # ============================================================================
 # FONCTIONS
@@ -215,4 +213,5 @@ alias zs="source ~/.zshrc"
 # ============================================================================
 
 check_zsh_changes
+systemctl --user start pulseaudio
 echo -e "\e[37m[aliases reloaded]\e[0m"

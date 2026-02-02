@@ -187,13 +187,10 @@ save_zshrc() {
         git add .zshrc
         # Verifie s'il y a des changements a commit
         if ! git diff --cached --quiet; then
-            git commit -m "$msg"
+            git commit -m "$msg" --quiet
             # Push seulement si une remote est configuree
             if git remote | grep -q "origin"; then
-                echo "Push vers le repo zshrc..."
-                git push origin master 2>/dev/null || git push origin main 2>/dev/null || git push
-            else
-                echo "Attention: Pas de remote 'origin' configurée dans $ZSH_REPO"
+                git push --quiet origin master 2>/dev/null || git push --quiet origin main 2>/dev/null || git push --quiet
             fi
         fi
     )

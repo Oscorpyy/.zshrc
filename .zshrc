@@ -190,3 +190,40 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 # --- ZSH Config ---
 # zs: Recharge les alias (sans pull)
 alias zs="source ~/.zshrc"
+
+# Ouvrir le .zshrc avec surveillance dans un terminal separe
+openz() {
+    code ~/.zshrc
+    (gnome-terminal --title="ZSH Watcher" -- bash -c '
+        echo -e "\e[34m[Watcher actif - Surveille ~/.zshrc]\e[0m"
+        echo -e "\e[33mAppuie sur Ctrl+C pour arreter et sauvegarder\e[0m"
+        echo ""
+        ZSH_REPO="$HOME/zsh_config_repo"
+        last_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
+        save_and_push() {
+            cp "$HOME/.zshrc" "$ZSH_REPO/.zshrc"
+            cd "$ZSH_REPO"
+            git add .zshrc
+            if ! git diff --cached --quiet; then
+                git commit -m "Auto-save .zshrc" --quiet
+                git push --quiet origin main 2>/dev/null || git push --quiet origin master 2>/dev/null || git push --quiet
+                echo -e "\e[32m[Sauvegarde et push OK!]\e[0m"
+            fi
+        }
+        trap "echo; echo -e \"\e[33m[Sauvegarde finale...]\e[0m\"; save_and_push; echo -e \"\e[32m[Termine! Tape zs pour recharger]\e[0m\"; sleep 2; exit" INT
+        while true; do
+            sleep 2
+            current_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
+            if [[ "$current_hash" != "$last_hash" ]]; then
+                last_hash="$current_hash"
+                echo -e "\e[33m[Modification detectee - sauvegarde...]\e[0m"
+                save_and_push
+            fi
+        done
+    ' &) 2>/dev/null
+}
+
+# Pull le .zshrc depuis GitHub et recharge
+pullz() {
+    sync_zshrc && source ~/.zshrc
+}

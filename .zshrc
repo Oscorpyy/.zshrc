@@ -142,6 +142,31 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 # Config pour le repo dedié au zshrc
 export ZSH_REPO="$HOME/zsh_config_repo"
 
+# Fonction pour synchroniser le .zshrc depuis GitHub (pull)
+sync_zshrc() {
+    if [ ! -d "$ZSH_REPO" ]; then
+        echo "Erreur: Le dossier $ZSH_REPO n'existe pas."
+        return 1
+    fi
+
+    # Pull depuis le repo distant (dans un sous-shell pour rester dans le dossier actuel)
+    (
+        cd "$ZSH_REPO"
+        if git remote | grep -q "origin"; then
+            echo -e "\e[33m[Syncing .zshrc from GitHub...]\e[0m"
+            git pull --quiet origin main 2>/dev/null || git pull --quiet origin master 2>/dev/null || git pull --quiet
+        fi
+    )
+
+    # Si le fichier distant est different, on le copie vers ~/.zshrc
+    if [ -f "$ZSH_REPO/.zshrc" ]; then
+        if ! diff -q "$HOME/.zshrc" "$ZSH_REPO/.zshrc" >/dev/null 2>&1; then
+            echo -e "\e[32m[Mise a jour du .zshrc depuis le repo]\e[0m"
+            cp "$ZSH_REPO/.zshrc" "$HOME/.zshrc"
+        fi
+    fi
+}
+
 # Fonction de sauvegarde automatique
 save_zshrc() {
     local msg="${1:-Auto update .zshrc}"
@@ -180,7 +205,8 @@ save_zshrc() {
 # 3. Recharger la conf
 alias openz="code -w ~/.zshrc && save_zshrc 'Modification via openz' && source ~/.zshrc" 
 
-alias zs="source ~/.zshrc" 
+# zs: Synchronise depuis GitHub (pull) puis recharge le .zshrc
+alias zs="sync_zshrc && source ~/.zshrc" 
 
 export PATH="$HOME/.local/bin:$PATH" 
 

@@ -123,8 +123,6 @@ systemctl --user start pulseaudio
 
 alias norm="norminette -R CheckForbiddenSourceHeader" 
 
-alias prout="echo -e 'ahahahahaha drole de fou prout'"
-
 alias c="cc -Wall -Wextra -Werror" 
 
 alias py="python3" 

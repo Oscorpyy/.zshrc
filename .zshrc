@@ -191,8 +191,7 @@ gall()
     git push 
 }
 
-# Ancienne fonction gitz remplacee par l'automatisme save_zshrc
-gitz() 
+gitz()
 {
     save_zshrc "$@"
 }

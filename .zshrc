@@ -188,7 +188,5 @@ alias stdgame="/sgoinfre/42stdGamesLauncher"
 alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 
 # --- ZSH Config ---
-# openz: Sync depuis GitHub, ouvre VS Code, sauvegarde et recharge
-alias openz="sync_zshrc && code -w ~/.zshrc && save_zshrc 'Modification via openz' && source ~/.zshrc"
-# zs: Synchronise depuis GitHub puis recharge
-alias zs="sync_zshrc && source ~/.zshrc"
+# zs: Recharge les alias (sans pull)
+alias zs="source ~/.zshrc"

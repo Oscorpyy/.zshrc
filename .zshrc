@@ -191,24 +191,23 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 # zs: Recharge les alias (sans pull)
 alias zs="source ~/.zshrc"
 
-# Ouvrir le .zshrc avec surveillance dans un terminal separe
-
 # Fichier flag pour arreter le watcher
 export ZSHRC_WATCHER_FLAG="/tmp/.zshrc_watcher_running"
 
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {
-    code ~/.zshrc
     touch "$ZSHRC_WATCHER_FLAG"
     (gnome-terminal --title="ZSH Watcher" -- bash -c '
-        TIMEOUT=300  # 5 minutes sans modification = arret auto
+        SAVE_INTERVAL=120  # Sauvegarde toutes les 2 minutes
         FLAG_FILE="/tmp/.zshrc_watcher_running"
-        echo -e "\e[34m[Watcher actif - Surveille ~/.zshrc]\e[0m"
-        echo -e "\e[33mArret auto apres 5min dinactivite ou tape stopz\e[0m"
-        echo ""
         ZSH_REPO="$HOME/zsh_config_repo"
-        last_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
-        last_change=$(date +%s)
+        
+        echo -e "\e[34m========================================\e[0m"
+        echo -e "\e[34m[Watcher actif - Surveille ~/.zshrc]\e[0m"
+        echo -e "\e[33mSauvegarde auto toutes les 2 min\e[0m"
+        echo -e "\e[33mFerme VS Code pour arreter\e[0m"
+        echo -e "\e[34m========================================\e[0m"
+        echo ""
         
         save_and_push() {
             cp "$HOME/.zshrc" "$ZSH_REPO/.zshrc"
@@ -217,8 +216,10 @@ openz() {
             if ! git diff --cached --quiet; then
                 git commit -m "Auto-save .zshrc" --quiet
                 git push --quiet origin main 2>/dev/null || git push --quiet origin master 2>/dev/null || git push --quiet
-                echo -e "\e[32m[Sauvegarde et push OK!]\e[0m"
+                echo -e "\e[32m[$(date +%H:%M:%S)] Sauvegarde et push OK!\e[0m"
+                return 0
             fi
+            return 1
         }
         
         cleanup() {
@@ -233,30 +234,40 @@ openz() {
         
         trap cleanup INT
         
+        # Lancer VS Code avec -w (wait) en arriere-plan
+        # Quand il se ferme, on supprime le flag
+        (code -w "$HOME/.zshrc"; rm -f "$FLAG_FILE") &
+        
+        last_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
+        last_save=$(date +%s)
+        
         while true; do
             sleep 2
             
-            # Verifier si le flag existe (stopz le supprime)
+            # Verifier si le flag existe (VS Code ferme ou stopz)
             if [ ! -f "$FLAG_FILE" ]; then
-                echo -e "\e[33m[Arret demande via stopz]\e[0m"
+                echo -e "\e[33m[VS Code ferme ou stopz]\e[0m"
                 cleanup
             fi
             
             current_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
             now=$(date +%s)
+            elapsed=$((now - last_save))
             
+            # Sauvegarde si modification detectee
             if [[ "$current_hash" != "$last_hash" ]]; then
                 last_hash="$current_hash"
-                last_change=$now
-                echo -e "\e[33m[Modification detectee - sauvegarde...]\e[0m"
-                save_and_push
+                echo -e "\e[33m[$(date +%H:%M:%S)] Modification detectee\e[0m"
             fi
             
-            # Timeout: arret si pas de modif depuis TIMEOUT secondes
-            elapsed=$((now - last_change))
-            if [ $elapsed -ge $TIMEOUT ]; then
-                echo -e "\e[33m[Timeout: pas de modif depuis 5min]\e[0m"
-                cleanup
+            # Sauvegarde periodique toutes les SAVE_INTERVAL secondes
+            if [ $elapsed -ge $SAVE_INTERVAL ]; then
+                if save_and_push; then
+                    last_save=$now
+                else
+                    echo -e "\e[90m[$(date +%H:%M:%S)] Pas de changement\e[0m"
+                    last_save=$now
+                fi
             fi
         done
     ' &) 2>/dev/null

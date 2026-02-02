@@ -90,77 +90,37 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch $(uname -m)"
-
-# Set personal aliases, overriding those provided by Oh My Zsh libs,
-# plugins, and themes. Aliases can be placed here, though Oh My Zsh
-# users are encouraged to define aliases within a top-level file in
-# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
-# - $ZSH_CUSTOM/aliases.zsh
-# - $ZSH_CUSTOM/macos.zsh
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-systemctl --user start pulseaudio
-
-alias norm="norminette -R CheckForbiddenSourceHeader" 
-
-alias c="cc -Wall -Wextra -Werror" 
-
-alias py="python3" 
-
-alias test="test"
-
-alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\' 
-
-alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\' 
-
-alias blue="/sgoinfre/scros/Public/utils/blue42" 
-
-alias gp="git pull" 
-
-alias stdgame="/sgoinfre/42stdGamesLauncher" 
-
-alias sound="systemctl --user start pulseaudio >/dev/null 2>&1" 
-
-# Config pour le repo dedié au zshrc
+export PATH="$HOME/.local/bin:$PATH"
 export ZSH_REPO="$HOME/zsh_config_repo"
 
-# Fonction pour synchroniser le .zshrc depuis GitHub (pull)
+# Demarrage auto du son (silencieux)
+systemctl --user start pulseaudio >/dev/null 2>&1
+
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# ============================================================================
+# FONCTIONS
+# ============================================================================
+
+# Synchroniser le .zshrc depuis GitHub (pull)
 sync_zshrc() {
     if [ ! -d "$ZSH_REPO" ]; then
         echo "Erreur: Le dossier $ZSH_REPO n'existe pas."
         return 1
     fi
-
-    # Pull depuis le repo distant (dans un sous-shell pour rester dans le dossier actuel)
     (
         cd "$ZSH_REPO"
         if git remote | grep -q "origin"; then
-            echo -e "\e[33m[Syncing .zshrc from GitHub...]\e[0m"
             git pull --quiet origin main 2>/dev/null || git pull --quiet origin master 2>/dev/null || git pull --quiet
         fi
     )
-
-    # Si le fichier distant est different, on le copie vers ~/.zshrc
     if [ -f "$ZSH_REPO/.zshrc" ]; then
         if ! diff -q "$HOME/.zshrc" "$ZSH_REPO/.zshrc" >/dev/null 2>&1; then
             echo -e "\e[32m[Mise a jour du .zshrc depuis le repo]\e[0m"
@@ -169,28 +129,20 @@ sync_zshrc() {
     fi
 }
 
-# Fonction de sauvegarde automatique
+# Sauvegarder le .zshrc vers GitHub (push)
 save_zshrc() {
     local msg="${1:-Auto update .zshrc}"
-    
-    # Creation du dossier si besoin
     if [ ! -d "$ZSH_REPO" ]; then
         echo "Creation du dossier $ZSH_REPO..."
         mkdir -p "$ZSH_REPO"
         (cd "$ZSH_REPO" && git init && echo "Repo initialisé. N'oubliez pas d'ajouter votre remote origin !")
     fi
-
-    # Copie du fichier
     cp "$HOME/.zshrc" "$ZSH_REPO/.zshrc"
-    
-    # Git operations dans un sous-shell (pour ne pas changer le dossier courant de l'utilisateur)
     (
         cd "$ZSH_REPO"
         git add .zshrc
-        # Verifie s'il y a des changements a commit
         if ! git diff --cached --quiet; then
             git commit -m "$msg" --quiet
-            # Push seulement si une remote est configuree
             if git remote | grep -q "origin"; then
                 git push --quiet origin master 2>/dev/null || git push --quiet origin main 2>/dev/null || git push --quiet
             fi
@@ -198,31 +150,45 @@ save_zshrc() {
     )
 }
 
-# Modification de openz pour :
-# 1. Ouvrir vscode et ATTENDRE la fermeture du fichier (-w)
-# 2. Lancer la sauvegarde automatiquement
-# 3. Recharger la conf
-alias openz="code -w ~/.zshrc && save_zshrc 'Modification via openz' && source ~/.zshrc" 
-
-# zs: Synchronise depuis GitHub (pull) puis recharge le .zshrc
-alias zs="sync_zshrc && source ~/.zshrc" 
-
-export PATH="$HOME/.local/bin:$PATH" 
-
-gall() 
-{ 
+# Git add, commit et push en une commande
+gall() {
     git add .
-    git commit -m "$@" 
-    git push 
+    git commit -m "$@"
+    git push
 }
 
-gitz()
-{
+# Alias pour sauvegarder le .zshrc
+gitz() {
     save_zshrc "$@"
 }
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
-# This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" 
-# This loads nvm bash_completion
+# ============================================================================
+# ALIAS
+# ============================================================================
+
+# --- Norminette & Linting ---
+alias norm="norminette -R CheckForbiddenSourceHeader"
+alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\''
+alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\''
+
+# --- Compilation ---
+alias c="cc -Wall -Wextra -Werror"
+
+# --- Python ---
+alias py="python3"
+
+# --- Git ---
+alias gp="git pull"
+
+# --- Outils 42 ---
+alias blue="/sgoinfre/scros/Public/utils/blue42"
+alias stdgame="/sgoinfre/42stdGamesLauncher"
+
+# --- Systeme ---
+alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
+
+# --- ZSH Config ---
+# openz: Sync depuis GitHub, ouvre VS Code, sauvegarde et recharge
+alias openz="sync_zshrc && code -w ~/.zshrc && save_zshrc 'Modification via openz' && source ~/.zshrc"
+# zs: Synchronise depuis GitHub puis recharge
+alias zs="sync_zshrc && source ~/.zshrc"

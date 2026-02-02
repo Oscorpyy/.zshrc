@@ -192,14 +192,24 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 alias zs="source ~/.zshrc"
 
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
+
+# Fichier flag pour arreter le watcher
+export ZSHRC_WATCHER_FLAG="/tmp/.zshrc_watcher_running"
+
+# Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {
     code ~/.zshrc
+    touch "$ZSHRC_WATCHER_FLAG"
     (gnome-terminal --title="ZSH Watcher" -- bash -c '
+        TIMEOUT=300  # 5 minutes sans modification = arret auto
+        FLAG_FILE="/tmp/.zshrc_watcher_running"
         echo -e "\e[34m[Watcher actif - Surveille ~/.zshrc]\e[0m"
-        echo -e "\e[33mAppuie sur Ctrl+C pour arreter et sauvegarder\e[0m"
+        echo -e "\e[33mArret auto apres 5min dinactivite ou tape stopz\e[0m"
         echo ""
         ZSH_REPO="$HOME/zsh_config_repo"
         last_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
+        last_change=$(date +%s)
+        
         save_and_push() {
             cp "$HOME/.zshrc" "$ZSH_REPO/.zshrc"
             cd "$ZSH_REPO"
@@ -210,17 +220,56 @@ openz() {
                 echo -e "\e[32m[Sauvegarde et push OK!]\e[0m"
             fi
         }
-        trap "echo; echo -e \"\e[33m[Sauvegarde finale...]\e[0m\"; save_and_push; echo -e \"\e[32m[Termine! Tape zs pour recharger]\e[0m\"; sleep 2; exit" INT
+        
+        cleanup() {
+            echo
+            echo -e "\e[33m[Sauvegarde finale...]\e[0m"
+            save_and_push
+            rm -f "$FLAG_FILE"
+            echo -e "\e[32m[Termine! Tape zs pour recharger]\e[0m"
+            sleep 2
+            exit
+        }
+        
+        trap cleanup INT
+        
         while true; do
             sleep 2
+            
+            # Verifier si le flag existe (stopz le supprime)
+            if [ ! -f "$FLAG_FILE" ]; then
+                echo -e "\e[33m[Arret demande via stopz]\e[0m"
+                cleanup
+            fi
+            
             current_hash=$(md5sum "$HOME/.zshrc" 2>/dev/null | cut -d" " -f1)
+            now=$(date +%s)
+            
             if [[ "$current_hash" != "$last_hash" ]]; then
                 last_hash="$current_hash"
+                last_change=$now
                 echo -e "\e[33m[Modification detectee - sauvegarde...]\e[0m"
                 save_and_push
             fi
+            
+            # Timeout: arret si pas de modif depuis TIMEOUT secondes
+            elapsed=$((now - last_change))
+            if [ $elapsed -ge $TIMEOUT ]; then
+                echo -e "\e[33m[Timeout: pas de modif depuis 5min]\e[0m"
+                cleanup
+            fi
         done
     ' &) 2>/dev/null
+}
+
+# Arreter le watcher manuellement
+stopz() {
+    if [ -f "$ZSHRC_WATCHER_FLAG" ]; then
+        rm -f "$ZSHRC_WATCHER_FLAG"
+        echo -e "\e[33m[Signal d arret envoye au watcher]\e[0m"
+    else
+        echo "Pas de watcher actif."
+    fi
 }
 
 # Pull le .zshrc depuis GitHub et recharge

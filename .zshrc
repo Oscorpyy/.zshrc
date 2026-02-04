@@ -115,13 +115,14 @@ pyall() {
     fi
 
     local found=0
+    local rc
     while IFS= read -r -d '' f; do
         found=1
         printf "\e[37m[Exécution: %s]\e[0m\n" "$f"
         python3 "$f"
-        local status=$?
-        if [[ $status -ne 0 ]]; then
-            printf "\e[31m[Erreur (code %d) lors de %s]\e[0m\n" "$status" "$f"
+        rc=$?
+        if [[ $rc -ne 0 ]]; then
+            printf "\e[31m[Erreur (code %d) lors de %s]\e[0m\n" "$rc" "$f"
         else
             printf "\e[32m[Terminé: %s]\e[0m\n" "$f"
         fi
@@ -133,6 +134,7 @@ pyall() {
         return 1
     fi
 }
+# ...existing code...
 
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {

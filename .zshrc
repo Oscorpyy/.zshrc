@@ -243,4 +243,4 @@ alias zs="source ~/.zshrc"
 
 check_zsh_changes
 systemctl --user start pulseaudio
-echo -e "\e[37m[aliases reloaded]\e[0m"
+echo -e "\e[32m[aliases reloaded]\e[0m"

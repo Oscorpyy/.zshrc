@@ -194,6 +194,7 @@ alias c="cc -Wall -Wextra -Werror"
 
 # --- Python ---
 alias py="python3"
+alias pyall="python3"
 
 # --- Git ---
 alias gp="git pull"

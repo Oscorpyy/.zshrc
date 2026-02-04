@@ -121,14 +121,17 @@ diffall() {
         return 1
     fi
 
-    printf "\033[34m=== Comparaison entre '%s' et '%s' ===\033[0m\n\n" "$dir1" "$dir2"
+    printf "\033[34m=== Comparaison entre '%s' et '%s' (hors fichiers caches) ===\033[0m\n\n" "$dir1" "$dir2"
 
-    # Liste unique de tous les fichiers relatifs presents dans l'un ou l'autre dossier
+    # Liste unique, en ignorant les chemins contenant un point cache (*/.*)
     local all_files
-    all_files=$( { (cd "$dir1" && find . -type f 2>/dev/null); (cd "$dir2" && find . -type f 2>/dev/null); } | sort | uniq )
+    all_files=$( { 
+        (cd "$dir1" && find . -type f -not -path '*/.*'); 
+        (cd "$dir2" && find . -type f -not -path '*/.*'); 
+    } | sort | uniq )
 
     if [[ -z "$all_files" ]]; then
-        printf "\033[33mAucun fichier trouve.\033[0m\n"
+        printf "\033[33mAucun fichier visible trouve.\033[0m\n"
         return 0
     fi
 
@@ -155,9 +158,9 @@ diffall() {
             printf "\033[32m[OK]\033[37m %s\033[0m\n" "$clean_name"
         else
             printf "\033[31m[DIFF]\033[37m %s\033[0m\n" "$clean_name"
-            # Afficher les differences (couleur unifiee, ignorer les 2 premieres lignes d'en-tetes)
+            # Afficher les differences
             diff --color=always -u "$p1" "$p2" | tail -n +3 | sed 's/^/    /'
-            echo "" # Saut de ligne pour aerer
+            echo ""
         fi
 
     done <<< "$all_files"

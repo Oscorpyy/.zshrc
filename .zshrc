@@ -106,6 +106,63 @@ stopz() {
     fi
 }
 
+# Comparer recursivement deux dossiers avec un affichage clair
+diffall() {
+    local dir1="${1%/}" # Enleve le slash final si present
+    local dir2="${2%/}"
+
+    if [[ -z "$dir1" || -z "$dir2" ]]; then
+        printf "\033[31mUsage: diffall <dossier1> <dossier2>\033[0m\n"
+        return 1
+    fi
+
+    if [[ ! -d "$dir1" || ! -d "$dir2" ]]; then
+        printf "\033[31mErreur: Les arguments doivent etre des dossiers valides.\033[0m\n"
+        return 1
+    fi
+
+    printf "\033[34m=== Comparaison entre '%s' et '%s' ===\033[0m\n\n" "$dir1" "$dir2"
+
+    # Liste unique de tous les fichiers relatifs presents dans l'un ou l'autre dossier
+    local all_files
+    all_files=$( { (cd "$dir1" && find . -type f 2>/dev/null); (cd "$dir2" && find . -type f 2>/dev/null); } | sort | uniq )
+
+    if [[ -z "$all_files" ]]; then
+        printf "\033[33mAucun fichier trouve.\033[0m\n"
+        return 0
+    fi
+
+    while IFS= read -r file; do
+        # Retirer le ./ au debut si present pour l'affichage
+        local clean_name="${file#./}"
+        local p1="$dir1/$file"
+        local p2="$dir2/$file"
+
+        # Cas 1: Manque dans Dossier 1
+        if [[ ! -f "$p1" ]]; then
+            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" "$dir1" "$clean_name"
+            continue
+        fi
+
+        # Cas 2: Manque dans Dossier 2
+        if [[ ! -f "$p2" ]]; then
+            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" "$dir2" "$clean_name"
+            continue
+        fi
+
+        # Cas 3: Comparaison du contenu
+        if diff -q "$p1" "$p2" >/dev/null 2>&1; then
+            printf "\033[32m[OK]\033[37m %s\033[0m\n" "$clean_name"
+        else
+            printf "\033[31m[DIFF]\033[37m %s\033[0m\n" "$clean_name"
+            # Afficher les differences (couleur unifiee, ignorer les 2 premieres lignes d'en-tetes)
+            diff --color=always -u "$p1" "$p2" | tail -n +3 | sed 's/^/    /'
+            echo "" # Saut de ligne pour aerer
+        fi
+
+    done <<< "$all_files"
+}
+
 # Executer tous les scripts .py dans un dossier donne ou le dossier courant
 pyall() {
     local dir="${1:-.}"

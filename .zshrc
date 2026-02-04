@@ -134,7 +134,6 @@ pyall() {
         return 1
     fi
 }
-# ...existing code...
 
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {

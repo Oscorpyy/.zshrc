@@ -106,6 +106,35 @@ stopz() {
     fi
 }
 
+pyall() {
+    local dir="${1:-.}"
+    if [[ ! -d "$dir" ]]; then
+        printf "\e[31m[Erreur] %s n'est pas un dossier\e[0m\n" "$dir"
+        return 1
+    fi
+
+    local found=0
+    while IFS= read -r -d '' f; do
+        found=1
+        printf "\e[37m[Exécution: %s]\e[0m\n" "$f"
+        python3 "$f"
+        local status=$?
+        if [[ $status -ne 0 ]]; then
+            printf "\e[31m[Erreur (code %d) lors de %s]\e[0m\n" "$status" "$f"
+        else
+            printf "\e[32m[Terminé: %s]\e[0m\n" "$f"
+        fi
+        printf "\n"
+    done < <(find "$dir" -type f -name '*.py' -print0 2>/dev/null)
+
+    if [[ $found -eq 0 ]]; then
+        printf "\e[33m[Aucun fichier .py trouvé dans %s]\e[0m\n" "$dir"
+        return 1
+    fi
+}
+# ...existing code...
+
+
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {
     touch "$ZSHRC_WATCHER_FLAG"
@@ -194,7 +223,6 @@ alias c="cc -Wall -Wextra -Werror"
 
 # --- Python ---
 alias py="python3"
-alias pyall="python3"
 
 # --- Git ---
 alias gp="git pull"

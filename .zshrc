@@ -106,6 +106,7 @@ stopz() {
     fi
 }
 
+# Executer tous les scripts .py dans un dossier donne ou le dossier courant
 pyall() {
     local dir="${1:-.}"
     if [[ ! -d "$dir" ]]; then
@@ -132,8 +133,6 @@ pyall() {
         return 1
     fi
 }
-# ...existing code...
-
 
 # Ouvrir le .zshrc avec surveillance dans un terminal separe
 openz() {

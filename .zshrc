@@ -285,6 +285,7 @@ alias c="cc -Wall -Wextra -Werror"
 alias py="python3"
 alias mp="mypy ."
 alias pa="pyall"
+alias fm="flake && mypy ."
 
 # --- Git ---
 alias gp="git pull"

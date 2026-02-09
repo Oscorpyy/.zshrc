@@ -178,7 +178,7 @@ pyall() {
     local rc
     while IFS= read -r -d '' f; do
         found=1
-        printf "\e[37m[Exécution: %s]\e[0m\n" "$f"
+        printf "\e[34m[Exécution: %s]\e[0m\n" "$f"
         python3 "$f"
         rc=$?
         if [[ $rc -ne 0 ]]; then

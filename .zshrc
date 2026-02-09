@@ -302,11 +302,11 @@ alias zs="source ~/.zshrc"
 
 
 # --- Alias de con ---
-alias rncp="echo -e 'ta gueule'"
+alias rncp="echo -e '\033[0;33m ta gueule \033[0m'"
 # ============================================================================
 # INITIALISATION (execute au chargement)
 # ============================================================================
 
 check_zsh_changes
 systemctl --user start pulseaudio
-echo -e "\033[30m[aliases reloaded]\033[0m\n"
+echo -e "\033[30m[aliases reloaded]\033[0m"

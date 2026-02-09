@@ -300,9 +300,9 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 # --- ZSH Config ---
 alias zs="source ~/.zshrc"
 
-
 # --- Alias de con ---
 alias rncp="echo -e '\033[0;33m ta gueule \033[0m'"
+alias da="diffall"
 # ============================================================================
 # INITIALISATION (execute au chargement)
 # ============================================================================

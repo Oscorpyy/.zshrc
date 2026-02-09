@@ -283,7 +283,7 @@ alias c="cc -Wall -Wextra -Werror"
 
 # --- Python ---
 alias py="python3"
-alias mp="mypy ."
+alias mp="mypy . --strict"
 alias pa="pyall"
 alias fm="flake && mypy ."
 

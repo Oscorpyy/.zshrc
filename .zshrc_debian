@@ -113,6 +113,20 @@ stopz() {
     fi
 }
 
+# Demander si on pull avant de charger les alias
+gitpull() {
+    local answer
+    echo -n "Pull depuis GitHub ? (o/n) : "
+    read -r answer
+    if [[ "$answer" == [oO] || "$answer" == [oO][uU][iI] ]]; then
+        echo "[INFO] Pull en cours..."
+        pullz
+        echo "[OK] Pull terminé."
+    else
+        echo "[INFO] Pull ignoré."
+    fi
+}
+
 # Comparer recursivement deux dossiers avec un affichage clair
 diffall() {
     local dir1="${1%/}" # Enleve le slash final si present
@@ -290,7 +304,7 @@ openza() {
 # ALIAS
 # ============================================================================
 
-# --- Norminette & Linting ---
+# --- Norminette & Flake ---
 alias norm="norminette -R CheckForbiddenSourceHeader"
 alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
 alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
@@ -316,14 +330,18 @@ alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
 
 # --- ZSH Config ---
 alias zs="source ~/.zshrc"
+alias oz="openz"
+alias opza="openza"
 
 # --- Alias de con ---
 alias rncp="echo -e '\033[0;33m ta gueule \033[0m'"
 alias da="diffall"
+
 # ============================================================================
 # INITIALISATION (execute au chargement)
 # ============================================================================
 
 check_zsh_changes
-systemctl --user start pulseaudio
+gitpull
+sound
 echo -e "\033[30m[Debian aliases reloaded]\033[0m"

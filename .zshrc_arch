@@ -85,7 +85,7 @@ save_zshrc() {
         fi
     )
 }
-
+t_
 # Git add, commit et push en une commande
 gall() {
     git add .
@@ -336,6 +336,7 @@ alias da="diffall"
 # INITIALISATION (execute au chargement)
 # ============================================================================
 
+sudo pacman -Syu
 check_zsh_changes
 gitpull
 echo -e "\033[30m[Arch aliases reloaded]\033[0m"

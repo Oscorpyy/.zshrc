@@ -120,7 +120,7 @@ gitpull() {
     read -r answer
     if [[ "$answer" == [oO] || "$answer" == [oO][uU][iI] ]]; then
         echo "[INFO] Pull en cours..."
-        pullz
+        sync_zshrc
         echo "[OK] Pull terminé."
     else
         echo "[INFO] Pull ignoré."

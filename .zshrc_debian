@@ -94,7 +94,7 @@ gall() {
 }
 
 # Sauvegarder le .zshrc manuellement
-gitz() {
+pushz() {
     save_zshrc "$@"
 }
 

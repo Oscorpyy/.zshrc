@@ -332,11 +332,14 @@ alias opza="openza"
 alias rncp="echo -e '\033[0;33m ta gueule \033[0m'"
 alias da="diffall"
 
+# --- Alias Arch only ---
+alias maj="sudo pacman -Syu"
+
 # ============================================================================
 # INITIALISATION (execute au chargement)
 # ============================================================================
 
-sudo pacman -Syu
+maj
 check_zsh_changes
 gitpull
 echo -e "\033[30m[Arch aliases reloaded]\033[0m"

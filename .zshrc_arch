@@ -283,7 +283,8 @@ openz() {
 
 # Ouvrir les 3 fichiers en même temps (base + arch + debian)
 openza() {
-    codium "$HOME/.zshrc" "$HOME/.zshrc_arch" "$HOME/.zshrc_debian"
+    openz
+    codium "$HOME/.zshrc" "$HOME/.zshrc_debian"
 }
 
 # ============================================================================

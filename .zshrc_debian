@@ -330,8 +330,8 @@ endbranch() {
 # ============================================================================
 
 # --- Norminette & Flake ---
-alias norm="norminette -R CheckForbiddenSourceHeader"
-alias normy='norminette 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
+alias normy="norminette -R CheckForbiddenSourceHeader"
+alias norm='normy 2>&1 | grep -v '\''OK'\'' | awk '\''NR==1{first=$0} NR>1{print} END{if(NR==1) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
 alias flake='flake8 2>&1 | awk '\''{print} END{if (NR==0) print "\033[34m[\033[37mOK\033[31m]\033[0m"}'\'
 
 # --- Compilation ---
@@ -341,10 +341,15 @@ alias cc="cc -Wall -Wextra -Werror"
 alias py="python3"
 alias mp="mypy . --strict"
 alias pa="pyall"
-alias fm="flake && mp"
+alias f="flake"
+alias fm="f && mp"
+
 
 # --- Git ---
 alias gp="git pull"
+alias gcl="git clone"
+alias gcla="git clone --recursive-submodulesls"
+alias gr="git restore ."
 
 # --- Outils 42 ---
 alias blue="/sgoinfre/scros/Public/utils/blue42"
@@ -360,16 +365,24 @@ alias oz="code ~/.zshrc_debian"
 alias os="code ~/.zshrc_debian"
 alias opza="openza"
 
-# --- Alias de con ---
-alias traa="tree -a -I '\''node_modules|__pycache__|.git|.vscode|.idea|.cache|.config|.local|.Trash*|.mypy_cache|.DS_Store'\'"
-alias da="diffall"
+# --- Makefile ---
 alias mc="make clean"
 alias m="make"
-alias mls="make lint_strict"
+alias mls="make lint-strict"
 alias ml="make lint"
 alias mr="make run"
 alias mrc="mr && mc"
+alias mfc="make fclean"
+alias mre="make re"
+alias mt="make test"
+alias tmt="time mt"
+alias mi="make install"
+ 
+# --- Alias de con ---
+alias traa="tree -a -I '\''node_modules|__pycache__|.git|.vscode|.idea|.cache|.config|.local|.Trash*|.mypy_cache|.DS_Store'\'"
+alias da="diffall"
 alias c="clear"
+alias -g lignes="| wc -l"
 
 # ============================================================================
 # INITIALISATION (execute au chargement)

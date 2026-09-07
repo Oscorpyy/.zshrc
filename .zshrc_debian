@@ -26,6 +26,32 @@ export NVM_DIR="$HOME/.nvm"
 # FONCTIONS
 # ============================================================================
 
+TEMP_DIR=""
+
+temp() {
+    TEMP_DIR="$PWD"
+    echo "📌 Dossier temporaire enregistré : $TEMP_DIR"
+}
+
+go_temp() {
+    if [[ -z "$TEMP_DIR" ]]; then
+        echo "❌ Aucun dossier temporaire enregistré."
+        return 1
+    fi
+
+    cd "$TEMP_DIR"
+    echo "📂 Retour dans : $TEMP_DIR"
+}
+
+background() {
+    local repo
+    repo="$(pwd)"
+
+    cd /home/opernod/42/background/ || return 1
+    ./test.sh >/dev/null 2>&1
+    cd "$repo" || return 1
+}
+
 # Afficher les changements du .zshrc au reload
 check_zsh_changes() {
     local current_file="${(%):-%x}"
@@ -123,7 +149,7 @@ gitpull() {
 
 # Comparer recursivement deux dossiers avec un affichage clair
 diffall() {
-    local dir1="${1%/}" # Enleve le slash final si present
+    local dir1="${1%/}"
     local dir2="${2%/}"
 
     if [[ -z "$dir1" || -z "$dir2" ]]; then
@@ -132,53 +158,120 @@ diffall() {
     fi
 
     if [[ ! -d "$dir1" || ! -d "$dir2" ]]; then
-        printf "\033[31mErreur: Les arguments doivent etre des dossiers valides.\033[0m\n"
+        printf "\033[31mErreur: Les arguments doivent etre des dossiers "
+        printf "valides.\033[0m\n"
         return 1
     fi
 
-    printf "\033[34m=== Comparaison entre '%s' et '%s' (hors fichiers caches) ===\033[0m\n\n" "$dir1" "$dir2"
+    printf "\033[34m=== Comparaison entre '%s' et '%s' "
+    printf "(hors fichiers caches) ===\033[0m\n\n" "$dir1" "$dir2"
 
-    # Liste unique, en ignorant les chemins contenant un point cache (*/.*)
     local all_files
-    all_files=$( { 
-        (cd "$dir1" && find . -type f -not -path '*/.*'); 
-        (cd "$dir2" && find . -type f -not -path '*/.*'); 
-    } | sort | uniq )
+    all_files=$({
+        (cd "$dir1" && find . -type f -not -path '*/.*')
+        (cd "$dir2" && find . -type f -not -path '*/.*')
+    } | sort | uniq)
 
     if [[ -z "$all_files" ]]; then
         printf "\033[33mAucun fichier visible trouve.\033[0m\n"
         return 0
     fi
 
+    # Compteurs
+    local count_ok=0
+    local count_diff=0
+    local count_missing1=0
+    local count_missing2=0
+
+    # Listes pour le sommaire
+    local missing1=""
+    local missing2=""
+    local different=""
+
     while IFS= read -r file; do
-        # Retirer le ./ au debut si present pour l'affichage
         local clean_name="${file#./}"
         local p1="$dir1/$file"
         local p2="$dir2/$file"
 
-        # Cas 1: Manque dans Dossier 1
+        # Manque dans Dossier 1
         if [[ ! -f "$p1" ]]; then
-            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" "$dir1" "$clean_name"
+            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" \
+                "$dir1" "$clean_name"
+
+            count_missing1=$((count_missing1 + 1))
+            missing1="${missing1}${clean_name}"$'\n'
             continue
         fi
 
-        # Cas 2: Manque dans Dossier 2
+        # Manque dans Dossier 2
         if [[ ! -f "$p2" ]]; then
-            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" "$dir2" "$clean_name"
+            printf "\033[33m[MANQUANT DANS %s]\033[37m %s\033[0m\n" \
+                "$dir2" "$clean_name"
+
+            count_missing2=$((count_missing2 + 1))
+            missing2="${missing2}${clean_name}"$'\n'
             continue
         fi
 
-        # Cas 3: Comparaison du contenu
+        # Comparaison du contenu
         if diff -q "$p1" "$p2" >/dev/null 2>&1; then
             printf "\033[32m[OK]\033[37m %s\033[0m\n" "$clean_name"
+            count_ok=$((count_ok + 1))
         else
             printf "\033[31m[DIFF]\033[37m %s\033[0m\n" "$clean_name"
-            # Afficher les differences
-            diff --color=always -u "$p1" "$p2" | tail -n +3 | sed 's/^/    /'
+
+            count_diff=$((count_diff + 1))
+            different="${different}${clean_name}"$'\n'
+
+            diff --color=always -u "$p1" "$p2" |
+                tail -n +3 |
+                sed 's/^/    /'
             echo ""
         fi
 
     done <<< "$all_files"
+
+    # ============================================================
+    # Sommaire
+    # ============================================================
+
+    local total=$((count_ok + count_diff + count_missing1 + count_missing2))
+
+    printf "\n\033[34m========================================\033[0m\n"
+    printf "\033[34m              SOMMAIRE\033[0m\n"
+    printf "\033[34m========================================\033[0m\n\n"
+
+    printf "\033[37mTotal de fichiers uniques : %d\033[0m\n" "$total"
+    printf "\033[32m[OK]      %d fichier(s) identique(s)\033[0m\n" \
+        "$count_ok"
+    printf "\033[31m[DIFF]    %d fichier(s) different(s)\033[0m\n" \
+        "$count_diff"
+    printf "\033[33m[MANQUANT] %d fichier(s) dans %s\033[0m\n" \
+        "$count_missing1" "$dir1"
+    printf "\033[33m[MANQUANT] %d fichier(s) dans %s\033[0m\n" \
+        "$count_missing2" "$dir2"
+
+    # Fichiers présents uniquement dans Dossier 1
+    if [[ -n "$missing2" ]]; then
+        printf "\n\033[33m--- Presents uniquement dans %s ---\033[0m\n" \
+            "$dir1"
+        printf "%s" "$missing2"
+    fi
+
+    # Fichiers présents uniquement dans Dossier 2
+    if [[ -n "$missing1" ]]; then
+        printf "\n\033[33m--- Presents uniquement dans %s ---\033[0m\n" \
+            "$dir2"
+        printf "%s" "$missing1"
+    fi
+
+    # Fichiers différents
+    if [[ -n "$different" ]]; then
+        printf "\n\033[31m--- Fichiers avec des differences ---\033[0m\n"
+        printf "%s" "$different"
+    fi
+
+    printf "\n\033[34m========================================\033[0m\n"
 }
 
 # Executer tous les scripts .py dans un dossier donne ou le dossier courant
@@ -325,6 +418,54 @@ endbranch() {
     git branch -D "$current_branch"
 }
 
+count_lines() {
+    local skips=(".git" ".venv" ".uv" "__pycache__" "node_modules" "build" "dist")
+    local takes=()
+    local current_mode=""
+
+    while (($# > 0)); do
+        case "$1" in
+            --skip)
+                current_mode="skip"
+                shift
+                ;;
+            --add)
+                current_mode="take"
+                shift
+                ;;
+            -*)
+                echo "Erreur : Option inconnue '$1'"
+                return 1
+                ;;
+            *)
+                if [[ "$current_mode" == "skip" ]]; then
+                    # Supprime le slash de fin s'il existe (ex: assets/ devient assets)
+                    skips+=("${1%/}")
+                else
+                    takes+=("$1")
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if ((${#takes[@]} == 0)); then
+        takes=(".")
+    fi
+
+    local prune_args=()
+    for skip in "${skips[@]}"; do
+        if ((${#prune_args[@]} > 0)); then
+            prune_args+=("-o")
+        fi
+        prune_args+=("-name" "$skip")
+    done  # <-- Correction ici : c'est bien 'done' et pas 'fi' !
+
+    find "${takes[@]}" \
+        -type d \( "${prune_args[@]}" \) -prune \
+        -o -type f -print0 2>/dev/null | xargs -0 cat 2>/dev/null | wc -l
+}
+
 # ============================================================================
 # ALIAS
 # ============================================================================
@@ -350,10 +491,12 @@ alias gp="git pull"
 alias gcl="git clone"
 alias gcla="git clone --recursive-submodulesls"
 alias gr="git restore ."
+alias gsa="git submodule add"
 
 # --- Outils 42 ---
 alias blue="/sgoinfre/scros/Public/utils/blue42"
 alias stdgame="/sgoinfre/42stdGamesLauncher"
+alias 42="cd ~/42 && ls"
 
 # --- Systeme ---
 alias sound="systemctl --user start pulseaudio >/dev/null 2>&1"
@@ -383,7 +526,13 @@ alias traa="tree -a -I '\''node_modules|__pycache__|.git|.vscode|.idea|.cache|.c
 alias da="diffall"
 alias c="clear"
 alias -g lignes="| wc -l"
-
+alias nbl="count_lines"
+alias uadd="uv add"
+alias ubuntu_server="ssh -i ~/Downloads/ssh-key-2026-05-05.key ubuntu@84.235.232.70"
+alias -g all_out="> out.txt 2>&1"
+alias gofr="cd ~/goinfre"
+ 
+export OLLAMA_MODELS=~/ollama_models
 # ============================================================================
 # INITIALISATION (execute au chargement)
 # ============================================================================
@@ -391,4 +540,5 @@ alias -g lignes="| wc -l"
 check_zsh_changes
 # gitpull
 sound
+background
 echo -e "\033[30m[Debian aliases reloaded]\033[0m"
